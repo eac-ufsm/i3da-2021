@@ -3,13 +3,12 @@ clear; clc; close all;
 
 %% Load files
 path_sofa = 'C:\Users\rdavi\Desktop\artigo Fred\BRIR_ms\';
+% BRIRs
 Obj_ori = SOFAload([path_sofa 'car_BRIRs.sofa']);
 Obj = SOFAload([path_sofa 'Obj_car_windowed.sofa']);
-
-
+% Calibration
 path_calib = 'C:\Users\rdavi\Desktop\artigo Fred\MEMS mics frequency response\';
 [calib_filter, fs_calib] = audioread([path_calib 'Mic_calibration.wav']);
-
 
 %% Apply calibration
 sz = size(Obj.Data.IR);
@@ -27,31 +26,21 @@ Obj_calib = Obj;
 Obj_calib.Data.IR = IR_cal;
 % plot_mag_phase(Obj, Obj_calib, 'Calibration (bruel)')
 
-% Obj_calib.Data.IR = IR_cal(:,:,:,1:sz(end));
-% plot_mag_phase(Obj, Obj_calib, 'Calibration (bruel)')
-
 %% Frequency range filtering
 fmin = 200;
 fmax = 2e4;
 Obj_band_filtered = sofaIRfilter(Obj, fmin, fmax);
-% plot_mag_phase(Obj, Obj_band_filtered, 'Band filter')
-
-
 Obj_band_filtered_calib = sofaIRfilter(Obj_calib, fmin, fmax);
 
 plot_mag_phase(Obj_ori, Obj_band_filtered_calib, 'Calibration + Band filter (FL BRIR, HATO: 40°)')
-
-hFigure = figure(1);
-filename = [pwd, '\BRIRcalib.pdf' ];
-exportgraphics(hFigure,filename,'BackgroundColor','none','ContentType','vector')
-
-
+% hFigure = figure(1);
+% filename = [pwd, '\BRIRcalib.pdf' ];
+% exportgraphics(hFigure,filename,'BackgroundColor','none','ContentType','vector')
 
 %% SAVE SOFA FILES
 SOFAsave('Obj_band_filtered_calib.sofa', Obj_band_filtered_calib);% Both calibration and band fiiltered
 SOFAsave('Obj_band_filtered.sofa',Obj_band_filtered);%only band filtered
 SOFAsave('Obj_calib.sofa',Obj_calib);% only calibration
-
 
 
 %% INTERNAL FUNCTIONS  ----------------------------------------------------
