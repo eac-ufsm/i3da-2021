@@ -71,7 +71,7 @@ Obj = SOFAload(path_sofa, 'nochecks');
 Fs = Obj.Data.SamplingRate;
 BRIRs = permute(Obj.Data.IR, [2,4,3,1]);
 BRIRs = BRIRs./max(abs(BRIRs(:)))*.4; % cena1=.10, cena2=.10
-% BRIRs = BRIRs(:,1:26138,:,:);
+n_samples = size(BRIRs,2);
 n_ch_brir = size(Obj.Data.IR,3);
 % Change from spherical to navigational coordinates 
 listener_posi = Obj.ListenerView;
@@ -105,7 +105,7 @@ idx_hato = dsearchn(listener_posi(:,1), yaw);
     
 %% START AURALIZATION
 % Initialize  FIR filters
-PartitionSize = 1024;
+PartitionSize = 2^nextpow2(n_samples/8);
 firBRIR_L = cell(1,n_ch_audio);
 firBRIR_R = cell(1,n_ch_audio);
 for s=1:n_ch_audio
