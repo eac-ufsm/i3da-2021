@@ -8,7 +8,7 @@ add_binaural_ch = true; % if true consideres the last 2 channels as binaural sig
 use_live_ht = false; % if true load the head tracker for real time head orientation 
 load_ht_data = true; % it true specify the path for the head tracker measurement
 save_output = true;  % whether to record the playback audio or not
-scene = 1;
+scene = 3;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Define input paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SOFA
@@ -22,14 +22,23 @@ path_tracker0 = 'Processing recorded HT/';
 if scene == 1
     path_audio = [path_audio0 'scene1.wav'];  
     path_ht_data = [path_tracker0 'conversa_pai_e_filho_resampled.mat']; % recorded HT
+    use_live_ht = false;
     if save_output
         file = ['car_cena1_' 'Obj_band_filtered_calib.wav'];    % output name
     end
 elseif scene ==2 
     path_audio = [path_audio0 'scene2.wav'];  
     path_ht_data = [path_tracker0 'taxi_pt1_resampled.mat']; % recorded HT
+    use_live_ht = false;
     if save_output
         file = ['car_cena2_' 'Obj_band_filtered_calib.wav'];    % output name
+    end
+else % scene 3
+    path_audio = [path_audio0 'scene3.wav'];  
+    use_live_ht = true;
+    load_ht_data = false;
+    if save_output
+        file = ['car_cena3_' 'Obj_band_filtered_calib.wav'];    % output name
     end
 end
 
@@ -81,7 +90,7 @@ audio = audio./max(abs(audio(:)))*.9;
 
 
 %% Audio to DSP object
-samples_per_frame = 1024;
+samples_per_frame = 2048;
 sigsrc = dsp.SignalSource(audio, samples_per_frame);
 
 deviceWriter = audioDeviceWriter('SampleRate', Fs, "BitDepth","16-bit integer");
@@ -97,32 +106,28 @@ idx_hato = dsearchn(listener_posi(:,1), yaw);
 %% START AURALIZATION
 % Initialize  FIR filters
 PartitionSize = 1024;
-for k =1:n_listener_pos
-    for s=1:n_ch_audio
-        fdfOA1{k,s} =  dsp.FrequencyDomainFIRFilter('Numerator', squeeze(BRIRs(1,:,s,k)),...
-                                                'Method', 'overlap-save',...
-                                                  'PartitionForReducedLatency', false,...
-                                                  'PartitionLength', PartitionSize );
-        fdfOA2{k,s} =  dsp.FrequencyDomainFIRFilter('Numerator', squeeze(BRIRs(2,:,s,k)),...
-                                                 'Method', 'overlap-save',...
-                                                  'PartitionForReducedLatency', false,...
-                                                  'PartitionLength', PartitionSize);
-%         fdfOA1{k,s} =  dsp.FIRFilter('Numerator', squeeze(BRIRs(1,:,s,k)));
-%         fdfOA2{k,s} =  dsp.FIRFilter('Numerator', squeeze(BRIRs(2,:,s,k)));
-    end
+firBRIR_L = cell(1,n_ch_audio);
+firBRIR_R = cell(1,n_ch_audio);
+for s=1:n_ch_audio
+    firBRIR_L{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
+                                              'PartitionForReducedLatency', true,...
+                                              'PartitionLength', PartitionSize );
+    firBRIR_R{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
+                                              'PartitionForReducedLatency', true,...
+                                              'PartitionLength', PartitionSize);
 end
 
-sz = size(fdfOA1);
-
-release(deviceWriter) % just to make sure matlab isn't already using the device
-release(sigsrc)
-
+% pre-allocate variables
+sz = size(firBRIR_L);
 out_l = zeros(samples_per_frame,n_ch_audio);
 out_r = zeros(samples_per_frame,n_ch_audio);
 out = zeros(samples_per_frame,2);
 saveout = zeros(length(audio)+samples_per_frame,2);
 cont_start = 1;
 cont_end = cont_start+samples_per_frame-1;
+idx_changer =inf;
+release(deviceWriter) % just to make sure matlab isn't already using the device
+release(sigsrc)
 
 while ~isDone(sigsrc) 
 %     pause(0)
@@ -133,7 +138,7 @@ while ~isDone(sigsrc)
     if use_live_ht % Real time tracking
         py_output = udpr();
         if ~isempty(py_output)            
-            data = str2num(convertCharsToStrings(char(py_output))); %#ok<*ST2NM>
+            data = str2double(split(convertCharsToStrings(char(py_output)), ','));
             idx_hato = dsearchn(pos, data(1));
         end
                 
@@ -142,17 +147,20 @@ while ~isDone(sigsrc)
         if cont_start < length(resampled_HT)
             yaw = resampled_HT(cont_start,1);
             idx_hato = dsearchn(pos, yaw);   
-%             pos(idx_hato)
+            % pos(idx_hato)
         end            
     end    
        
     %%%% Apply BRIRs
     for n=1:4
-        ind = sub2ind(sz, idx_hato,n);
-        out_l(:,n) = fdfOA1{n}(audioIn(:,n));
-        out_r(:,n) = fdfOA2{n}(audioIn(:,n));
+        if idx_changer ~= idx_hato
+            firBRIR_L{n}.Numerator = squeeze(BRIRs(1,:,n,idx_hato));
+            firBRIR_R{n}.Numerator = squeeze(BRIRs(2,:,n,idx_hato));
+        end
+        out_l(:,n) = firBRIR_L{n}(audioIn(:,n));
+        out_r(:,n) = firBRIR_R{n}(audioIn(:,n));   
     end
-    
+    idx_changer = idx_hato;
     %%%% Fetch output
     if add_binaural_ch
         out = [mean([out_l, audioIn(:,6)],2),...
