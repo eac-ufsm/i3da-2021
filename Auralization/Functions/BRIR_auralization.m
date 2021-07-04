@@ -5,10 +5,10 @@ clear all; clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Config options: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 add_binaural_ch = true; % if true consideres the last 2 channels as binaural signals already
-use_live_ht = false; % if true load the head tracker for real time head orientation 
+use_live_ht = true; % if true load the head tracker for real time head orientation 
 load_ht_data = true; % it true specify the path for the head tracker measurement
 save_output = true;  % whether to record the playback audio or not
-scene = 2;           % Pick which scen you want to listen
+scene = 3;           % Pick which scen you want to listen
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -47,8 +47,14 @@ end
 
 %% Start Head Tracker from binaries
 if use_live_ht
-    addpath('D:\Documentos\1 - Work\internoise2021-headtracker\src\output'); 
-    open('HeadTracker.exe') 
+    link = '<a href="https://github.com/eac-ufsm/internoise2021-headtracker/releases">here</a>';
+    try
+        addpath('D:\Documentos\1 - Work\internoise2021-headtracker\src\output'); 
+        open('HeadTracker.exe') 
+    catch 
+        fprintf(['The Head tracker was not found at MATLAB path! \n' ...
+              'Click ' link ' to download. \n'])
+    end
     % Connect to UDP port
     udpr = dsp.UDPReceiver('RemoteIPAddress', '127.0.0.1',...
                            'LocalIPPort',50050, ...
