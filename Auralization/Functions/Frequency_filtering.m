@@ -20,6 +20,9 @@ for k = 1:size(IR,2)
     end
 end
 
+if rem(size(IR_calib,1),2) ~= 0
+    IR_calib(end,:,:,:) = [];
+end
 IR_cal = permute(IR_calib, dimorder);
 Obj_calib = Obj;
 
@@ -60,7 +63,7 @@ end
 IR1 = shiftdim(Obj.Data.IR, 3);
 IR2 = shiftdim(Obj2.Data.IR, 3);
 
-ir1 = IR1(5150:end,1,1,1);       
+ir1 = IR1(5000:end,1,1,1);       
 ir2 = IR2(:,1,1,1);
 
 ir1 = ir1./(max(abs(ir1(:))));

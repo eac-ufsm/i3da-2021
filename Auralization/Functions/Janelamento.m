@@ -1,4 +1,4 @@
-% clear; clc
+clear; clc
 
 %% LOad SOFA
 path_sofa = 'C:\Users\rdavi\Desktop\artigo Fred\BRIR_ms\';
@@ -13,19 +13,20 @@ TRmax = 0.22;
 N_out = fs*TRmax;
 
 %% SOFA files windowing
-IR_win = zeros(size(IR));
+% IR_win = zeros(size(IR));
 thr = 10;
 for k = 1:size(IR, 2)
     for m = 1:size(IR, 4)
-       A = IR(:,k,1,m); % L
-       B = IR(:,k,2,m); % R    
+       A = IR(5000:25000-1,k,1,m); % L
+       B = IR(5000:25000-1,k,2,m); % R  
+       N_ir = size(A,1);
        % Get onset 
        OnSetL = IR_start(A, thr);
        OnSetR = IR_start(B, thr); 
        winL  = create_window(TRmax, N_ir, OnSetL, fs);
        winR  = create_window(TRmax, N_ir, OnSetR, fs);
-       IR_win(:,k,1,m) = squeeze(IR(:,k,1,m)).*winL;
-       IR_win(:,k,2,m) = squeeze(IR(:,k,2,m)).*winR;
+       IR_win(:,k,1,m) = A.*winL;
+       IR_win(:,k,2,m) = B.*winR;
        if k == 1 && m == 1 
            win_save = winL;
        end
@@ -37,7 +38,7 @@ IR_win = IR_win./max(abs(IR_win(:)));
 
 %% View output 
 Obj_win = Obj;
-Obj_win.Data.IR = IR_win(:,:,:,5150:40000-1);
+Obj_win.Data.IR = IR_win; %(:,:,:,5150:22000-1);
 plot_mag_phase(Obj, Obj_win, 'Calibration (bruel)')
 size(Obj_win.Data.IR)
 
@@ -77,9 +78,6 @@ win_begin = zeros(idx_start-lin_size,1);
 
 win_end = zeros(N_ir -(length(win_begin)+length(win_decay)),1);
 win = [win_begin; win_decay; win_end];
-% win = [win, win];
-% plot(win)
-
 end
 
 
@@ -118,31 +116,41 @@ function plot_mag_phase(Obj, Obj2, gtitle)
 if nargin<3
     gtitle = '';
 end
-N1 = size(Obj.Data.IR, 4);
-fs1 = Obj.Data.SamplingRate;
-f1 = linspace(0, fs1-fs1/N1, N1);
-
-N2 = size(Obj2.Data.IR, 4);
-fs2 = Obj2.Data.SamplingRate;
-f2 = linspace(0, fs2-fs2/N2, N2);
-
 IR1 = shiftdim(Obj.Data.IR, 3);
 IR2 = shiftdim(Obj2.Data.IR, 3);
 
-%%% PLOT -------------------------------------------------------------------
-figure;
-% Time
-subplot(311)
+ir1 = IR1(5000:end,1,1,1);       
+ir2 = IR2(:,1,1,1);
+
+ir1 = ir1./(max(abs(ir1(:))));
+ir2 = ir2./(max(abs(ir2(:))));
+
+N1 = size(ir1, 1);
+fs1 = Obj.Data.SamplingRate;
+f1 = linspace(0, fs1-fs1/N1, N1);
+
+N2 = size(ir2, 1);
+fs2 = Obj2.Data.SamplingRate;
+f2 = linspace(0, fs2-fs2/N2, N2);
+
+
 tx1 = (0:N1-1)/fs1; 
 tx2 = (0:N2-1)/fs2; 
 
-ir1 = IR1(:,1,1,1);       
-ir2 = IR2(:,1,1,1);
+%%% PLOT -------------------------------------------------------------------
+figure('outerposition', [100 100 1200 675]);
+% Time
+subplot(311)
+
 plot(tx1, ir1); hold on 
-plot(tx2, ir2);  
-axis tight
-legend('Original', 'Filtered', 'location', 'best')
+plot(tx2, ir2); 
+
+
+xlim([0, 0.2])
+% axis tight
 xlabel('Time (s)')
+ylabel('Amplitude')
+legend('Original', 'Windowed', 'location', 'best')
 
 % Frequency
 subplot(312)
