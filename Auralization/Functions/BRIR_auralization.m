@@ -8,7 +8,7 @@ add_binaural_ch = true; % if true consideres the last 2 channels as binaural sig
 use_live_ht = true; % if true load the head tracker for real time head orientation 
 load_ht_data = true; % it true specify the path for the head tracker measurement
 save_output = true;  % whether to record the playback audio or not
-scene = 3;           % Pick which scen you want to listen
+scene = 1;           % Pick which scen you want to listen
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -98,7 +98,10 @@ audio = audio./max(abs(audio(:)))*.9;
 
 
 %% Audio to DSP object
-samples_per_frame = 1024; % In you experience underruns or glitches turn this up to solve it
+samples_per_frame = 2048; % In you experience underruns or glitches turn this up to solve it
+% considering the head tracker recordings for scenes 1 and 2 was done with a
+% buffer size of 2048, there's no benefits in using a lower buffer size for
+% these scenes
 sigsrc = dsp.SignalSource(audio, samples_per_frame);
 
 deviceWriter = audioDeviceWriter('SampleRate', Fs, "BitDepth","16-bit integer");
@@ -114,9 +117,9 @@ for s=1:n_ch_audio
     firBRIR_L{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
                                               'PartitionForReducedLatency', true,...
                                               'PartitionLength', PartitionSize );
-    firBRIR_R{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
-                                              'PartitionForReducedLatency', true,...
-                                              'PartitionLength', PartitionSize);
+        firBRIR_R{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
+                                                  'PartitionForReducedLatency', true,...
+                                                  'PartitionLength', PartitionSize);
 end
 % pre-allocate other variables
 sz = size(firBRIR_L);
