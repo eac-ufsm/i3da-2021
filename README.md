@@ -34,7 +34,7 @@ This repository contains the resources necessary to reproduce the complete pipel
 
 # Cite us
 
-> William D’Andrea Fonseca; Felipe Ramos de Mello; Davi Rocha Carvalho; Paulo Henrique Mareze; Olavo M. Silva. “Measurement of car cabin binaural impulse responses and auralization via convolution,” in *International Conference on Immersiveand 3D Audio — I3DA*, Bologna, Italy, Sep. 2021, pp. 1—13.
+> William D’Andrea Fonseca; Felipe Ramos de Mello; Davi Rocha Carvalho; Paulo Henrique Mareze; Olavo M. Silva. “Measurement of car cabin binaural impulse responses and auralization via convolution,” in *International Conference on Immersiveand 3D Audio — I3DA*, Bologna, Italy, Sep. 2021, pp. 1–13.
 
 **Bibtex:**
 ```
