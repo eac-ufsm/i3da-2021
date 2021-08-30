@@ -43,13 +43,13 @@ This repository contains the resources necessary to reproduce the complete pipel
 - [filtro_para_correcao_dos_mics.m](https://github.com/eac-ufsm/i3da-2021/blob/main/Auralization/Functions/Calibration%20filters/filtro_para_correcao_dos_mics.m): Generates the calibration filters from the measured magnitude (relative calibration).
 
 ### Real-time auralizations and rendered scenes
-The code [BRIR_auralization](https://github.com/eac-ufsm/i3da-2021/blob/main/Auralization/Functions/BRIR_auralization.m) recreates the scenarios 1, 2 and 3, described in the paper, just pick the scene by changing the parameter ```scene``` at the Config cell.
+The code [BRIR_auralization](https://github.com/eac-ufsm/i3da-2021/blob/main/Auralization/Functions/BRIR_auralization.m) recreates the scenarios 1, 2 and 3 described in the paper, just pick the scene by changing the parameter ```scene``` at the Config cell.
 
 The rendering pipeline for these scenes follow the structure bellow:
 
 
 <p align="center">
-<img width="400px" src="https://github.com/eac-ufsm/internoise2021-headtracker/blob/main/images/coord.svg"/>
+<img width="800px" src="https://github.com/eac-ufsm/i3da-2021/blob/main/img/auralization_engine.png"/>
 </p>
 
 The camera based head-tracker can be found [here](https://github.com/eac-ufsm/internoise2021-headtracker).
