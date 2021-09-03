@@ -37,7 +37,7 @@ This repository contains the resources necessary to reproduce the complete pipel
 In this work, we developed and tested a binaural recorder based on digital MEMS microphones. The signal chain comprises a pair of I2S digital microphones connected to a Teensy 4.0 microcontroller (MCU), and has capabilities such as real-time filtering and a plug-and-play audio interface behaviour. Furthermore, in order to track the read orientation of the subjects, a contacless web-cam based head tracker was implemented based on Google's MediaPipe library.
 
 <p align="center">
-<img width="800px" src="https://github.com/eac-ufsm/i3da-2021/blob/main/img/car_ms_signal_chain.png"/>
+<img width="500px" src="https://github.com/eac-ufsm/i3da-2021/blob/main/img/car_ms_signal_chain.png"/>
 </p>
 
 
