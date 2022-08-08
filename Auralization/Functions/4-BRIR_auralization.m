@@ -4,12 +4,12 @@ clear all; clc;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Config options: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-add_binaural_ch = true; % if true consideres the last 2 channels as binaural signals already
-use_live_ht = true; % if true load the head tracker for real time head orientation 
-load_ht_data = true; % it true specify the path for the head tracker measurement
-save_output = true;  % whether to record the playback audio or not
-scene = 1;           % Pick which scen you want to listen
-
+use_live_ht = true;        % if true load the head tracker for real time head orientation 
+load_ht_data = true;       % it true specify the path for the head tracker measurement
+save_output = true;        % whether to record the playback audio or not
+add_binaural_ch = true;    % if true consideres the last 2 channels as binaural signals already
+sum_bin_afterwards = false; % sum the binaural recordings offline (for scenes 1 and 2)
+scene = 3;                 % Pick which scene you want to listen
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Define input paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,7 +49,7 @@ end
 if use_live_ht
     link = '<a href="https://github.com/eac-ufsm/internoise2021-headtracker/releases">here</a>';
     try
-        addpath('D:\Documentos\1 - Work\internoise2021-headtracker\src\output'); 
+        addpath('D:\Documentos\1 - Work\internoise2021-headtracker\src\output\HeadTracker\'); 
         open('HeadTracker.exe') 
     catch 
         fprintf(['The Head tracker was not found at MATLAB path! \n' ...
@@ -106,7 +106,10 @@ sigsrc = dsp.SignalSource(audio, samples_per_frame);
 
 deviceWriter = audioDeviceWriter('SampleRate', Fs, "BitDepth","16-bit integer");
 setup(deviceWriter, zeros(samples_per_frame, 2))
-        
+
+% file writer
+afw = dsp.AudioFileWriter(output_filename, ...
+                          'SampleRate', Fs);
 
 %% Pre-config 
 % Initialize  FIR filters
@@ -114,12 +117,12 @@ PartitionSize = 2^nextpow2(n_samples/2);
 firBRIR_L = cell(1,n_ch_audio);
 firBRIR_R = cell(1,n_ch_audio);
 for s=1:n_ch_audio
-    firBRIR_L{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
-                                              'PartitionForReducedLatency', true,...
-                                              'PartitionLength', PartitionSize );
-        firBRIR_R{s} =  dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
-                                                  'PartitionForReducedLatency', true,...
-                                                  'PartitionLength', PartitionSize);
+    firBRIR_L{s} = dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
+                                                 'PartitionForReducedLatency', true,...
+                                                 'PartitionLength', PartitionSize );
+    firBRIR_R{s} = dsp.FrequencyDomainFIRFilter('Method', 'overlap-add',...
+                                                 'PartitionForReducedLatency', true,...
+                                                 'PartitionLength', PartitionSize);
 end
 % pre-allocate other variables
 sz = size(firBRIR_L);
@@ -135,35 +138,39 @@ idx_changer =inf;
 %% START AURALIZATION
 release(deviceWriter) % just to make sure matlab isn't already using the device
 release(sigsrc)
+release(afw)
 while ~isDone(sigsrc) 
     %%%% Read audio file   
-    audioIn = step(sigsrc);   
+    audioIn = sigsrc();   
+    
     %%%% HEAD TRACKER 
     if use_live_ht % Real time tracking
-        py_output = step(udpr);
+        py_output = udpr();
         if ~isempty(py_output)            
-            data = str2double(split(convertCharsToStrings(char(py_output)), ','));
+            data = str2double(split(convertCharsToStrings(char(py_output)),','));
             idx_hato = dsearchn(pos, data(1));
         end                
     end
     if load_ht_data % Recorded tracking
         if cont_start < length(resampled_HT)
             yaw = resampled_HT(cont_start,1);
-            idx_hato = dsearchn(pos, yaw);   
+            idx_hato = dsearchn(pos, -yaw);   
         end            
-    end           
+    end     
+    
     %%%% Apply BRIRs
-    for n=1:4
+    for n=1:4        
         if idx_changer ~= idx_hato
             firBRIR_L{n}.Numerator = BRIRs(1,:,n,idx_hato);
-            firBRIR_R{n}.Numerator = BRIRs(2,:,n,idx_hato);
+            firBRIR_R{n}.Numerator = BRIRs(2,:,n,idx_hato); 
         end
         out_l(:,n) = firBRIR_L{n}(audioIn(:,n));
-        out_r(:,n) = firBRIR_R{n}(audioIn(:,n));   
+        out_r(:,n) = firBRIR_R{n}(audioIn(:,n));  
     end
     idx_changer = idx_hato;
+    
     %%%% Fetch output
-    if add_binaural_ch
+    if add_binaural_ch 
         out = [mean([out_l, audioIn(:,6)],2),...
                mean([out_r, audioIn(:,7)],2)];
     else % no binaural channels
@@ -174,7 +181,8 @@ while ~isDone(sigsrc)
     deviceWriter(out);    
     %%% Save audio output 
     if save_output
-        saveout(cont_start:cont_end,:) = out; 
+%         saveout(cont_start:cont_end,:) = out; 
+        afw(out);
     end   
     %%% Update counters
     cont_start = cont_end+1;
@@ -182,8 +190,8 @@ while ~isDone(sigsrc)
 end
 release(sigsrc)
 release(deviceWriter)
-
+release(afw)
 
 %% Save auralization 
-saveout = saveout./max(abs(saveout(:)))*0.96;
-audiowrite(output_filename, saveout, fs_audio)
+% saveout = saveout./max(abs(saveout(:)))*0.975;
+% audiowrite(output_filename, saveout, fs_audio)

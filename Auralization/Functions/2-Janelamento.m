@@ -1,9 +1,9 @@
 clear; clc
 
 %% LOad SOFA
-path_sofa = 'C:\Users\rdavi\Desktop\artigo Fred\BRIR_ms\';
-Obj = SOFAload([path_sofa 'car_BRIRs.sofa'], 'nochecks');
-
+path_sofa = '';
+Obj = SOFAload([path_sofa 'raw_BRIRs.sofa'], 'nochecks');
+Obj = truncate_IR(Obj);
 fs = Obj.Data.SamplingRate;
 sz = size(Obj.Data.IR);
 dimorder = length(sz):-1:1;
@@ -14,11 +14,12 @@ N_out = fs*TRmax;
 
 %% SOFA files windowing
 % IR_win = zeros(size(IR));
+clear IR_win
 thr = 10;
 for k = 1:size(IR, 2)
     for m = 1:size(IR, 4)
-       A = IR(5000:25000-1,k,1,m); % L
-       B = IR(5000:25000-1,k,2,m); % R  
+       A = IR(5000:end-1,k,1,m); % L
+       B = IR(5000:end-1,k,2,m); % R  
        N_ir = size(A,1);
        % Get onset 
        OnSetL = IR_start(A, thr);
@@ -43,7 +44,7 @@ plot_mag_phase(Obj, Obj_win, 'Calibration (bruel)')
 size(Obj_win.Data.IR)
 
 
-SOFAsave('Obj_car_windowed.sofa', Obj_win);% only calibration
+SOFAsave('windowed_BRIRs.sofa', Obj_win);% only calibration
 
 save('window_for_plot', 'win_save')
 
@@ -77,7 +78,8 @@ win_decay = win_decay(length(win_decay)/2:end-1);
 win_begin = zeros(idx_start-lin_size,1);
 
 win_end = zeros(N_ir -(length(win_begin)+length(win_decay)),1);
-win = [win_begin; win_decay; win_end];
+% win = [win_begin; win_decay; win_end];
+win = [win_begin; ones(abs(length(win_begin) - N_ir),1)];
 end
 
 
@@ -120,7 +122,7 @@ IR1 = shiftdim(Obj.Data.IR, 3);
 IR2 = shiftdim(Obj2.Data.IR, 3);
 
 ir1 = IR1(5000:end,1,1,1);       
-ir2 = IR2(:,1,1,1);
+ir2 = IR2(1:end,1,1,1);
 
 ir1 = ir1./(max(abs(ir1(:))));
 ir2 = ir2./(max(abs(ir2(:))));
@@ -146,7 +148,7 @@ plot(tx1, ir1); hold on
 plot(tx2, ir2); 
 
 
-xlim([0, 0.2])
+xlim([0, tx1(end)])
 % axis tight
 xlabel('Time (s)')
 ylabel('Amplitude')

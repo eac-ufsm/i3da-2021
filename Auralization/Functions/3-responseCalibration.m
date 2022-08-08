@@ -2,15 +2,15 @@
 clear; clc; close all;
 
 %% Load files
-path_sofa = 'C:\Users\rdavi\Desktop\artigo Fred\BRIR_ms\';
+path_sofa = '';
 % BRIRs
-Obj_ori = SOFAload([path_sofa 'car_BRIRs.sofa']);
-Obj = SOFAload([path_sofa 'Obj_car_windowed.sofa']);
+Obj_ori = SOFAload([path_sofa 'raw_BRIRs.sofa']);
+Obj = SOFAload([path_sofa 'windowed_BRIRs.sofa']);
 % Calibration
-path_calib = 'C:\Users\rdavi\Desktop\artigo Fred\MEMS mics frequency response\';
+path_calib = ''; %% coloque aqui o path pro .wav com fitro de calibração
 [calib_filter, fs_calib] = audioread([path_calib 'Mic_calibration.wav']);
 
-%% Apply calibration
+%% Apply
 sz = size(Obj.Data.IR);
 dimorder = length(sz):-1:1;
 IR = permute(Obj.Data.IR, dimorder);

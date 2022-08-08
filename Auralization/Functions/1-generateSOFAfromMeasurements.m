@@ -2,23 +2,23 @@ clear; clc
 % Generate sofa BRIR from measurements
 
 %% Load measurements
-load('measurements/car_cabin_front_left_BRIR')
+load([pwd filesep 'measurements' filesep  'car_cabin_front_left_BRIR.mat'])
 ri_front_left = ms_to_ir(ms, results);
 BRIRs = ri_front_left;
 
-load('measurements/car_cabin_front_right_BRIR')
+load([pwd filesep 'measurements' filesep  'car_cabin_front_right_BRIR'])
 ri_front_right = ms_to_ir(ms, results);
 BRIRs = cat(4, BRIRs, ri_front_right);
 
-load('measurements/car_cabin_rear_left_BRIR')
+load([pwd filesep 'measurements' filesep  'car_cabin_rear_left_BRIR'])
 ri_rear_left = ms_to_ir(ms, results);
 BRIRs = cat(4, BRIRs, ri_rear_left);
 
-load('measurements/car_cabin_rear_right_BRIR')
+load([pwd filesep 'measurements' filesep  'car_cabin_rear_right_BRIR'])
 ri_rear_right = ms_to_ir(ms, results);  
 BRIRs = cat(4, BRIRs, ri_rear_right);
 
-load('measurements/passenger_loudspeaker_BRIR')
+load([pwd filesep 'measurements' filesep  'passenger_loudspeaker_BRIR'])
 ri_passenger = ms_to_ir(ms, results);
 BRIRs = cat(4, BRIRs, ri_passenger);
 
@@ -80,7 +80,7 @@ Obj = SOFAupdateDimensions(Obj);
 
 
 %% SAVE SOFA FILE
-filename = 'car_BRIRs.sofa';
+filename = 'raw_BRIRs.sofa';
 SOFAsave(filename, Obj);
 
 
