@@ -1,3 +1,5 @@
 *.asv
-Auralization/Functions/*wav
+Auralization/Functions/*.wav
+Auralization/Functions/*.sofa
+Auralization/Functions/measurements/*.mat
 Auralization/Listening tests/dep
